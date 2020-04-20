@@ -1,11 +1,16 @@
 import logging
-from twitter_extractor import test
+from tweet_extractor import TweetExtractor
 from utils import setup_logging
 from sys import stderr
-import config
+import configparser
+
+
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 logger = logging.getLogger(__name__)
 setup_logging()
-test(config,logger)
+tweet = TweetExtractor(config['tweet_extractor'],logger)
+
 
 

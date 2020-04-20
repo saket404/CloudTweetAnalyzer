@@ -2,6 +2,8 @@ import os
 import logging.config
 import yaml
 
+
+# Code adapted from https://fangpenlin.com/posts/2012/08/26/good-logging-practice-in-python/
 def setup_logging(
     default_path='logging.yaml',
     default_level=logging.INFO,
