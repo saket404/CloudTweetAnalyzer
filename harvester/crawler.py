@@ -5,6 +5,7 @@ from shapely.geometry import Point, box
 from queue import PriorityQueue
 import json
 
+
 class Crawler(StreamListener):
     def __init__(self, config, logger):
         self.logger = logger
@@ -40,7 +41,8 @@ class Crawler(StreamListener):
         if user['id_str'] not in self.history['user']:
             self.history['user'].add(user['id_str'])
             self.q.put((flag, user['id_str']))
-            self.logger.info(f"Pipe: {pipe} | Added User ID: {user['id_str']} to Queue")
+            self.logger.info(
+                f"Pipe: {pipe} | Added User ID: {user['id_str']} to Queue")
 
     def tweet_processor(self, tweet, flag, pipe):
         self.logger.debug(
@@ -111,8 +113,10 @@ class Crawler(StreamListener):
         self.logger.info(
             "Pipe: Stream | Initializing Twitter Streaming pipeline......")
         self.twitterStream = Stream(self.api.auth, self, tweet_mode='extended')
-        self.twitterStream.filter(
-            locations=self.polygon, is_async=True, languages=self.languages)
+        self.twitterStream.filter(locations=self.polygon,
+            is_async=True,
+            languages=self.languages,
+            track = [self.searchTerms])
 
     def download_search(self):
         self.logger.info(
@@ -125,7 +129,9 @@ class Crawler(StreamListener):
                 q=query,
                 count=100,
                 geocode=geocode,
-                tweet_mode='extended').items():
+                tweet_mode='extended',
+                exclude_retweets=True,
+                exclude_replies=True).items():
 
             try:
                 if self.tweet_processor(tweet._json, 1, "Search"):
@@ -139,13 +145,43 @@ class Crawler(StreamListener):
             "Pipe: Search | Closing Twitter Search pipeline......")
 
     def download_user(self):
-        pass
+        self.logger.info(
+            "Pipe: User   | Initializing Twitter User Timeline pipeline......")
+        while True:
+            user_id = self.q.get(block=True, timeout=None)[1]
+            user_id = int(user_id)
+            relevant = False
+            item_count = 0
+
+            if user_id not in self.history['user']:
+                self.history['user'].add(int(user_id))
+
+                for tweet in Cursor(self.api.user_timeline,
+                    user_id=user_id,
+                    count=200,
+                    tweet_mode='extended',
+                    exclude_retweets=True,
+                    exclude_replies=True).items():
+                    item_count += 1
+                    try:
+                        if self.tweet_processor(tweet._json, 1, "User"):
+                            relevant = True
+                            self.logger.info(
+                                f"Pipe: User   | Added Tweet ID: {tweet.id} from User ID: {tweet.author.id}")
+                    except Exception:
+                        self.logger.info(
+                            f"Pipe: User   | Error processing tweet... Skipping....")
+
+                    if item_count == 300 and not relevant:
+                        self.logger.info(f"Pipe: User | User ID: {user_id} No relevant tweets found")
+                        break
+
 
     def start_pipeline(self):
         try:
             self.download_stream()
             self.download_search()
-            # self.download_user()
+            self.download_user()
         except error.TweepError as e:
             self.logger.exception(e)
         except KeyboardInterrupt:
