@@ -1,6 +1,8 @@
+from tweepy import  OAuthHandler, API
 import os
 import logging.config
 import yaml
+
 
 
 # Code adapted from https://fangpenlin.com/posts/2012/08/26/good-logging-practice-in-python/
@@ -30,3 +32,14 @@ def lang_list(languages):
 def polygon_list(polygon):
     polygon = [float(i) for i in polygon.split(',')]
     return polygon
+
+def twitter_setup(config):
+    auth = OAuthHandler(config['C_KEY'], config['C_SECRET'])
+    auth.set_access_token(config['A_TOKEN'], config['A_SECRET'])
+    api = API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify= True)
+    return api
+
+def filter(tweet):
+    filtered = {
+
+    }

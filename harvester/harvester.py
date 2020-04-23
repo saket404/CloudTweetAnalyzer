@@ -2,16 +2,26 @@ import logging
 from crawler import Crawler
 from utils import setup_logging
 import configparser
+import tweepy.error as ex
+import sys
 
 
-config = configparser.ConfigParser()
-config.read('config.ini')
+def harvester():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
 
-logger = logging.getLogger('crawler')
-setup_logging()
+    logger = logging.getLogger('crawler')
+    setup_logging()
+    try:
+        tweet = Crawler(config['tweet_extractor'],logger)
+        tweet.start_pipeline()
+    except ex.TweepError as e:
+        logger.error(e)
+    finally:
+        sys.exit(0)
+    
 
-
-tweet = Crawler(config['tweet_extractor'],logger)
-tweet.stream()
+if __name__ == '__main__':
+    harvester()
 
 
