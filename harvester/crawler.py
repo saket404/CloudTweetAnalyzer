@@ -5,6 +5,7 @@ from shapely.geometry import Point, box
 from queue import PriorityQueue
 import json, time
 import GetOldTweets3 as got
+from collections import Counter
 
 
 class Crawler(StreamListener):
@@ -48,8 +49,11 @@ class Crawler(StreamListener):
 
         self.file = open('data.json','a')
         self.file.write("[")
-        
+
+        # Stats variables
         self.twtCount = 0
+        self.totCount = 0
+        self.whichStats = Counter({"0":0,"1":0,"2":0})
 
     def check_coordinate(self, coordinates):
         if coordinates:
@@ -76,7 +80,7 @@ class Crawler(StreamListener):
 
 
         self.logger.info(
-            f'Pipe: {pipe} | Saving Tweet ID: {tweet["id"]} | Database: {db} | Tweet Count: {self.twtCount}')
+            f'Pipe: {pipe} | Saving Tweet ID: {tweet["id"]} | Database: {db} | Tweet Count: {self.twtCount} out of {self.totCount}')
 
     def add_user_to_queue(self, user, flag, pipe):
         if int(user['id_str']) not in self.history['user_q']:
@@ -137,6 +141,7 @@ class Crawler(StreamListener):
             self.twitterStream = None
 
     def tweet_processor(self, tweet, flag, pipe):
+        self.totCount += 1
         self.logger.debug(
             f"Pipe: {pipe} | Processing Tweet ID: {tweet['id']} | User ID: {tweet['user']['id']}")
 
@@ -175,7 +180,7 @@ class Crawler(StreamListener):
         current = self.twtCount
 
         self.logger.info(
-            f"Pipe: Search | Initializing Twitter Search pipeline for {maxTweets} tweets......")
+            f"Pipe: Search | Initializing Twitter Search pipeline...")
 
         for tweet in Cursor(
                 self.api.search,
@@ -204,7 +209,7 @@ class Crawler(StreamListener):
         self.logger.info(
             "Pipe: User   | Initializing Twitter User Timeline pipeline......")
         while True:
-            user_id = self.q.get(block=True,timeout=None)[1]
+            slot,user_id = self.q.get(block=True,timeout=None)
             user_id = int(user_id)
             relevant = False
             item_count = 0
@@ -222,6 +227,7 @@ class Crawler(StreamListener):
                     item_count += 1
                     try:
                         if self.tweet_processor(tweet._json, 1, "User"):
+                            self.whichStats[str(slot)] += 1
                             self.logger.debug(
                                 f"Pipe: User | Added Tweet ID: {tweet.id} by User ID: {tweet.author.id}"
                             )
@@ -285,6 +291,7 @@ class Crawler(StreamListener):
                     time.sleep(50)
                     break
         except KeyboardInterrupt:
+            self.logger.info(f"Stats {self.whichStats}")
             self.file.write("]")
             self.file.close()
             self.disconnect()
