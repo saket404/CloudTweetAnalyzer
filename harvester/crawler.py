@@ -266,7 +266,7 @@ class Crawler(StreamListener):
                 tweets = got.manager.TweetManager.getTweets(tweetCriteria)
 
                 for tweet in tweets:
-                    self.add_user_to_queue({'id_str':tweet.author_id},1,"Old")
+                    self.add_user_to_queue({'id_str':str(tweet.author_id)},1,"Old")
             except SystemExit:
                 print('Pipe: Old | Reached limit exiting...')
                 break
