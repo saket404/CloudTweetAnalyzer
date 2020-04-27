@@ -140,9 +140,9 @@ class Crawler(StreamListener):
             if self.check_coordinate(tweet['coordinates']):
                 # TO-DO save to COUCH DB
                 self.add_to_db(tweet, "twt_db", pipe)
+                self.add_user_to_queue(tweet['user'], flag, pipe)
                 if check_relevance(tweet['full_text'],self.searchTermsList):
                     self.add_to_db(tweet,"filter_twt_db",pipe)
-                    self.add_user_to_queue(tweet['user'], flag, pipe)
                 return True
             else:
                 return False
