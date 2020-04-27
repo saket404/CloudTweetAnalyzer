@@ -40,7 +40,7 @@ def polygon_list(polygon):
 def twitter_setup(config):
     auth = OAuthHandler(config['C_KEY'], config['C_SECRET'])
     auth.set_access_token(config['A_TOKEN'], config['A_SECRET'])
-    api = API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+    api = API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True,retry_errors=set([401, 404, 500, 503]))
     return api
 
 

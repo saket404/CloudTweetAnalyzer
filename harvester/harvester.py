@@ -13,10 +13,12 @@ def harvester():
     logger = logging.getLogger('crawler')
     setup_logging()
     try:
-        tweet = Crawler(config['tweet_extractor'],logger)
+        tweet = Crawler(config,logger)
         tweet.start_pipeline()
     except ex.TweepError as e:
         logger.error(e)
+    except Exception as e:
+        logger.exception(e)
     finally:
         sys.exit(0)
     
