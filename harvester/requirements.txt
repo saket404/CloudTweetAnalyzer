@@ -21,3 +21,4 @@ wrapt==1.11.2
 Shapely==1.7.0
 GetOldTweets3==0.0.11
 python-benedict==0.18.1
+CouchDB==1.2

@@ -45,6 +45,8 @@ def twitter_setup(config):
 
 
 def filter_tweet(tweet, keys):
+    if 'full_text' not in tweet:
+        tweet['full_text'] = tweet['extended_tweet']['full_text'] if 'extended_tweet' in tweet else tweet['text']
     filtered = benedict(tweet).subset(keys=keys)
     return filtered
 

@@ -1,31 +1,32 @@
 import couchdb
+import contextlib
 
-
-def db_connection(config, logger):
-    databases = config['DBS'].split(",")
-    try:
-        couch = couchdb.Server('http://%s:%s@localhost:5984/' % (config['USERNAME'], config['PASSWORD']))  #TODO: use remote url address instead of the localhost
-        logger.info("Connected to CouchDB...")
-        for database in databases:
-            if database not in couch:
-                couch.create(database)
-                logger.info(f"{database} has been created!")
+class Couch(object):
+    def __init__(self,config,dbName,logger):
+        self.logger = logger
+        self.dbName = dbName
+        try:
+            self.server = couchdb.Server(config['URL'])  #TODO: use remote url address instead of the localhost
+            self.logger.info("Created CouchDB server instance...")
+            if dbName not in self.server:
+                self.db = self.server.create(dbName)
+                logger.info(f"{dbName} has been created!")
             else:
-                logger.info(f"{database} exists!")
-    except:
-        logger.exception("Could not connect to CouchDB!")
-    return couch
+                self.db = self.server[dbName]
+                logger.info(f"{dbName} exists!")
+        except Exception as e:
+            logger.exception(e)
 
-
-def insert_data(data, dbName, logger):
+    def save(self,data):
         # Trying to update an existing document with an incorrect _rev will raise a ResourceConflict exception.
         try:
             data['_id'] = data['id_str']
-            doc_id, _ = dbName.save(data)
+            doc_id, _ = self.db.save(data)
+            self.logger.debug(f"{doc_id} Saved sucessfully......")
             return True
         except couchdb.http.ResourceConflict:
-            logger.debug(f"{data['id_str']} already exists.....")
+            self.logger.info(f"{data['id_str']} already exists.....")
             return False
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
             return False

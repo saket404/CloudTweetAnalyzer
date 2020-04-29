@@ -3,12 +3,13 @@ from crawler import Crawler
 from utils import setup_logging
 import configparser
 import tweepy.error as ex
-import sys
+import sys, os
 
 
 def harvester():
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    file = os.getenv('CONFIG_FILE','ins_0.ini')
+    config.read(f'config/{file}')
 
     logger = logging.getLogger('crawler')
     setup_logging()

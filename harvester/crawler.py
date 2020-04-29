@@ -1,7 +1,8 @@
 from tweepy import Stream, error, Cursor
 from tweepy.streaming import StreamListener
 from utils import lang_list, polygon_list, twitter_setup, check_relevance, filter_tweet
-from couch import db_connection, insert_data
+from couch import Couch
+import couchdb
 from shapely.geometry import Point, box
 from queue import PriorityQueue
 import json, time
@@ -14,7 +15,8 @@ class Crawler(StreamListener):
         self.logger = logger
         
         self.couchConfig = config['couch']
-        self.db = db_connection(self.couchConfig,self.logger)
+        self.twt_db = Couch(self.couchConfig,'twt_db',self.logger)
+        self.user_db = Couch(self.couchConfig,'user_db',self.logger)
 
         self.crawlerConfig = config['tweet_extractor']
         self.api = twitter_setup(self.crawlerConfig)
@@ -23,6 +25,7 @@ class Crawler(StreamListener):
         self.twitterStream = None
         self.polygon = polygon_list(self.crawlerConfig['POLYGON'])
         self.languages = lang_list(self.crawlerConfig['LANG'])
+        self.searchState = self.crawlerConfig['STATE']
         self.searchTerms = self.crawlerConfig['SEARCH_TERMS']
         self.query = self.searchTerms.replace(","," OR ")
         self.searchTermsList = self.searchTerms.split(',')
@@ -34,9 +37,10 @@ class Crawler(StreamListener):
 
         self.q = PriorityQueue()
         self.oldTweetSize = 100000
+        self.oldTweetSearch  = self.crawlerConfig['OLD_SEARCH']
         self.followerLimit = 300
 
-        self.history = {'tweet': set(), 'user_q': set()}
+        self.history = {'tweet': set(),'user_q': set()}
 
         # Stats variables
         self.twtCount = 0
@@ -44,30 +48,27 @@ class Crawler(StreamListener):
         self.totCount = 0
         self.whichStats = Counter({"0":0,"1":0,"2":0})
 
-    def check_coordinate(self, coordinates):
-        if coordinates:
-            if coordinates['coordinates']:
-                point = coordinates['coordinates']
-                p = Point(point[0], point[1])
-                polygon = box(self.polygon[0], self.polygon[1],
-                              self.polygon[2], self.polygon[3])
-                return polygon.contains(p)
+    def check_location(self, tweet):
+        flag = False
+        json_tweet = tweet._json
+
+        if tweet.coordinates or (tweet.place and self.searchState in tweet.place.full_name.lower()): 
+            if tweet.coordinates:
+                point = tweet.coordinates['coordinates']  
             else:
-                return False
-        else:
-            return False
+                point = list(tweet.place.bounding_box.origin())
+                place = {'type': 'Point_Place','coordinates': point}
+                json_tweet['coordinates'] = place
 
-    def add_to_db(self, tweet, dbName, pipe):
-        # Test writing to file and db
-        if insert_data(tweet,self.db[dbName],self.logger):
-            if dbName == "filter_twt_db":
-                self.validTwtCount += 1
-            self.twtCount += 1
-            self.logger.info(f'Pipe: {pipe} | Saving Tweet ID: {tweet["id"]} | Database: {dbName}')
-            self.logger.info(f'Pipe: {pipe} | Count: Valid - {self.validTwtCount} Melb - {self.twtCount} Total - {self.totCount}')
+            p = Point(point[0], point[1])
+            polygon = box(self.polygon[0], self.polygon[1],
+                            self.polygon[2], self.polygon[3])
+            flag = polygon.contains(p)
         else:
-            pass
+            flag = False
 
+        return flag,json_tweet
+        
     def add_user_to_queue(self, user, flag, pipe):
         if int(user['id_str']) not in self.history['user_q']:
             self.history['user_q'].add(int(user['id_str']))
@@ -87,20 +88,14 @@ class Crawler(StreamListener):
         """
         if status.retweeted:
             return
-        
-        tweet = status._json
-
-        if hasattr(status, "extended_tweet"):
-            tweet['full_text'] = status.extended_tweet['full_text']
-        else:
-            tweet['full_text'] = status.text
 
         try:
-            if self.tweet_processor(tweet, 0, "Stream"):
+            if self.tweet_processor(status, 0, "Stream"):
                 self.logger.debug(
                         f"Pipe: Stream | Added Tweet ID: {status.id} by User ID: {status.author.id}"
                     )
-        except Exception:
+        except Exception as e:
+            self.logger.exception(e)
             self.logger.info(
                 f"Pipe: Stream | Error processing tweet ID: {status.id}... Skipping....")
 
@@ -129,48 +124,57 @@ class Crawler(StreamListener):
     def tweet_processor(self, tweet, flag, pipe):
         self.totCount += 1
         self.logger.debug(
-            f"Pipe: {pipe} | Processing Tweet ID: {tweet['id']} | User ID: {tweet['user']['id']}")
+            f"Pipe: {pipe} | Processing Tweet ID: {tweet.id} | User ID: {tweet.author.id}")
 
-        tweet = filter_tweet(tweet, self.filterKeys)
+        
+        if tweet.id_str not in self.twt_db.db and tweet.id not in self.history['tweet']:
+            
+            self.history['tweet'].add(tweet.id)
+            valid,json_tweet = self.check_location(tweet)
 
-        if tweet['id'] not in self.history['tweet']:
-            self.history['tweet'].add(tweet['id'])
+            if valid:
+                json_tweet = filter_tweet(json_tweet, self.filterKeys)
+                # Add relevant tweet to database with relevant tags
+                if check_relevance(json_tweet['full_text'],self.searchTermsList):  
+                    json_tweet['relevance'] = True
+                    if self.twt_db.save(json_tweet):
+                        self.logger.info(f'Pipe: {pipe} | Saving Tweet ID: {json_tweet["id"]} | Database: twt_db')
+                        self.twtCount += 1
+                        self.validTwtCount += 1
+                else:
+                    # Add tweet to database with normal tags
+                    if self.twt_db.save(json_tweet):
+                        self.logger.info(f'Pipe: {pipe} | Saving Tweet ID: {json_tweet["id"]} | Database: twt_db')
+                        self.twtCount += 1
 
-        # TO-DO add COUCHDB functions here.......
-            if self.check_coordinate(tweet['coordinates']):
-                # TO-DO save to COUCH DB
-                self.add_to_db(tweet, "twt_db", pipe)
-                self.add_user_to_queue(tweet['user'], flag, pipe)
-                if check_relevance(tweet['full_text'],self.searchTermsList):
-                    self.add_to_db(tweet,"filter_twt_db",pipe)
+                self.add_user_to_queue(json_tweet['user'], flag, pipe)
+                self.logger.info(f'Pipe: {pipe} | Count: Valid - {self.validTwtCount} | {self.searchState} - {self.twtCount} | Total - {self.totCount}')
                 return True
             else:
                 return False
-
         else:
             self.logger.debug(
-                f"Pipe: {pipe} | Skipping Tweet ID: {tweet['id']} as already processed.")
+                f"Pipe: {pipe} | Skipping Tweet ID: {tweet.id} as already processed.")
             return False
 
     def download_stream(self):
         self.logger.info(
             "Pipe: Stream | Initializing Twitter Streaming pipeline......")
         self.twitterStream = Stream(self.api.auth, self, tweet_mode='extended')
-        self.twitterStream.filter(locations=self.polygon,
-            is_async=True)
+        self.twitterStream.filter(locations=self.polygon, is_async=True)
 
     def download_search(self):
         query = self.query
         geocode = self.searchRadius
         twtPerQuery = 100
-        current = self.twtCount
+        current = self.validTwtCount
 
         self.logger.info(
             f"Pipe: Search | Initializing Twitter Search pipeline...")
 
         for tweet in Cursor(
                 self.api.search,
-                q="*",
+                q=query+" exclude:retweets",
                 count=twtPerQuery,
                 geocode=geocode,
                 tweet_mode='extended',
@@ -178,15 +182,16 @@ class Crawler(StreamListener):
                 exclude_replies=True).items():
 
             try:
-                if self.tweet_processor(tweet._json, 1, "Search"):
+                if self.tweet_processor(tweet, 1, "Search"):
                     self.logger.debug(
                         f"Pipe: Search | Added Tweet ID: {tweet.id} by User ID: {tweet.author.id}"
                     )
-            except Exception:
+            except Exception as e:
+                self.logger.exception(e)
                 self.logger.info(
                     f"Pipe: Search | Error processing tweet ID: {tweet.id} ... Skipping....")
 
-        count = self.twtCount - current
+        count = self.validTwtCount - current
         self.logger.info(
             f"Pipe: Search | Closing Twitter Search pipeline with {count} valid tweets......")
 
@@ -199,11 +204,11 @@ class Crawler(StreamListener):
             relevant = False
             item_count = 0
 
-            if not self.db['user_db'].get(str(user_id)):
+            if not self.user_db.db.get(str(user_id)):
                 data = {'id_str':str(user_id)}
-                if insert_data(data,self.db['user_db'],self.logger):
+                if self.user_db.save(data):
                     self.logger.info(
-                        f"Pipe: User | Added user {user_id} to db")
+                        f"Pipe: User | Added user {user_id} to db | Left: {self.q.qsize()} Users")
                 
 
                 for tweet in Cursor(self.api.user_timeline,
@@ -214,13 +219,14 @@ class Crawler(StreamListener):
                     exclude_replies=True).items():
                     item_count += 1
                     try:
-                        if self.tweet_processor(tweet._json, 1, "User"):
+                        if self.tweet_processor(tweet, 1, "User"):
                             self.whichStats[str(slot)] += 1
                             self.logger.debug(
                                 f"Pipe: User | Added Tweet ID: {tweet.id} by User ID: {tweet.author.id}"
                             )
                             relevant = True
-                    except Exception:
+                    except Exception as e:
+                        self.logger.exception(e)
                         self.logger.info(
                             f"Pipe: User   | Error processing tweet ID: {tweet.id} ... Skipping....")
 
@@ -229,7 +235,7 @@ class Crawler(StreamListener):
                         break
 
                 if relevant:
-                    for follower in Cursor(self.api.followers_ids,user_id=user_id).items(300):
+                    for follower in Cursor(self.api.followers_ids,user_id=user_id).items(self.followerLimit):
                         self.add_user_to_queue({'id_str':str(follower)},2,"User")
 
             else:
@@ -248,7 +254,7 @@ class Crawler(StreamListener):
                 tweetCriteria = got.manager.TweetCriteria().setQuerySearch(term)\
                                             .setSince("2019-05-01")\
                                             .setUntil("2020-04-25")\
-                                            .setNear('Melbourne, Australia')\
+                                            .setNear(self.oldTweetSearch)\
                                             .setWithin('50km')\
                                             .setMaxTweets(self.oldTweetSize)
                 tweets = got.manager.TweetManager.getTweets(tweetCriteria)
@@ -265,6 +271,7 @@ class Crawler(StreamListener):
         try:
             while True:
                 try:
+                    pass
                     self.download_stream()
                     self.download_search()
                     self.download_old_tweets()
@@ -280,7 +287,5 @@ class Crawler(StreamListener):
                     break
         except KeyboardInterrupt:
             self.logger.info(f"Stats {self.whichStats}")
-            # self.file.write("]")
-            # self.file.close()
             self.disconnect()
             self.logger.info('Stopping Crawler......')
