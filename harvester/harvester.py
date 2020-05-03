@@ -8,7 +8,7 @@ import sys, os
 
 def harvester():
     config = configparser.ConfigParser()
-    file = os.getenv('CONFIG_FILE','ins_0.ini')
+    file = os.getenv('CONFIG_FILE','ins_3.ini')
     config.read(f'config/{file}')
 
     logger = logging.getLogger('crawler')

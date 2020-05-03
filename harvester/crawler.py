@@ -142,6 +142,7 @@ class Crawler(StreamListener):
                         self.twtCount += 1
                         self.validTwtCount += 1
                 else:
+                    json_tweet['relevance'] = False
                     # Add tweet to database with normal tags
                     if self.twt_db.save(json_tweet):
                         self.logger.info(f'Pipe: {pipe} | Saving Tweet ID: {json_tweet["id"]} | Database: twt_db')
