@@ -86,9 +86,6 @@ class Crawler(StreamListener):
         """
         Filtering of tweets
         """
-        if status.retweeted:
-            return
-
         try:
             if self.tweet_processor(status, 0, "Stream"):
                 self.logger.debug(
@@ -126,6 +123,9 @@ class Crawler(StreamListener):
         self.logger.debug(
             f"Pipe: {pipe} | Processing Tweet ID: {tweet.id} | User ID: {tweet.author.id}")
 
+        # Consider the original Tweet of a retweet.
+        if hasattr(tweet,'retweeted_status'):
+            tweet = tweet.retweeted_status
         
         if tweet.id_str not in self.twt_db.db and tweet.id not in self.history['tweet']:
             
@@ -175,11 +175,10 @@ class Crawler(StreamListener):
 
         for tweet in Cursor(
                 self.api.search,
-                q=query+" exclude:retweets",
+                q=query,
                 count=twtPerQuery,
                 geocode=geocode,
                 tweet_mode='extended',
-                exclude_retweets=True,
                 exclude_replies=True).items():
 
             try:
@@ -216,7 +215,6 @@ class Crawler(StreamListener):
                     user_id=user_id,
                     count=200,
                     tweet_mode='extended',
-                    exclude_retweets=True,
                     exclude_replies=True).items():
                     item_count += 1
                     try:
