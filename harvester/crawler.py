@@ -5,7 +5,7 @@ from couch import Couch
 import couchdb
 from shapely.geometry import Point, box
 from queue import PriorityQueue
-import json, time
+import json, time, re
 import GetOldTweets3 as got
 from collections import Counter
 
@@ -25,18 +25,20 @@ class Crawler(StreamListener):
         self.twitterStream = None
         self.polygon = polygon_list(self.crawlerConfig['POLYGON'])
         self.languages = lang_list(self.crawlerConfig['LANG'])
+        self.searchCity = self.crawlerConfig['CITY'] 
         self.searchState = self.crawlerConfig['STATE']
         self.searchTerms = self.crawlerConfig['SEARCH_TERMS']
         self.query = self.searchTerms.replace(","," OR ")
         self.searchTermsList = self.searchTerms.split(',')
         self.searchRadius = self.crawlerConfig['GEOCODE']
-        self.filterKeys = ["created_at","id","id_str","full_text","coordinates","place","lang"]
+        self.coo = [float(self.searchRadius.split(',')[1]),float(self.searchRadius.split(',')[0])]
+        self.filterKeys = ["created_at","id","id_str","full_text","coordinates","place","lang","city","state","place_name","neighborhood"]
         user = ["id","id_str","created_at","name","screen_name","location","time_zone","statuses_count","followers_count","url"]
         user_keys = ["user."+k for k in user]
         self.filterKeys.extend(user_keys)
 
         self.q = PriorityQueue()
-        self.oldTweetSize = 100000
+        self.oldTweetSize = 500000
         self.oldTweetSearch  = self.crawlerConfig['OLD_SEARCH']
         self.followerLimit = 300
 
@@ -50,22 +52,65 @@ class Crawler(StreamListener):
 
     def check_location(self, tweet):
         flag = False
+        userloc = tweet.author.location if tweet.author.location else ""
         json_tweet = tweet._json
+        city_regex = re.compile("(perth)|(brisbane)|(melbourne)|(sydney)")
+        state_regex = re.compile("(victoria)|(western australia)|(queensland)|(new south wales)")
+        polygon = box(self.polygon[0], self.polygon[1],self.polygon[2], self.polygon[3])
 
-        if tweet.coordinates or (tweet.place and self.searchState in tweet.place.full_name.lower()): 
+        state = None
+        city = None
+        neighborhood = None
+        place_name = None
+
+
+        if tweet.coordinates or tweet.place or tweet.author.location: 
             if tweet.coordinates:
-                point = tweet.coordinates['coordinates']  
-            else:
-                point = list(tweet.place.bounding_box.origin())
-                place = {'type': 'Point_Place','coordinates': point}
-                json_tweet['coordinates'] = place
+                point = tweet.coordinates['coordinates']
+                p = Point(point[0], point[1])  
+                flag = polygon.contains(p)
+                state = self.searchState 
+   
+            if tweet.place and not flag:
+                if tweet.place.place_type == 'poi':
+                    point = list(tweet.place.bounding_box.origin())
+                    place_name = tweet.place.full_name.lower()
+                    place = {'type': 'Point','coordinates': point}
+                    json_tweet['coordinates'] = place
+                    p = Point(point[0], point[1])
+                    flag = polygon.contains(p)
+                    state = self.searchState 
 
-            p = Point(point[0], point[1])
-            polygon = box(self.polygon[0], self.polygon[1],
-                            self.polygon[2], self.polygon[3])
-            flag = polygon.contains(p)
-        else:
-            flag = False
+            if tweet.place:
+                if tweet.place.place_type == 'city':
+                    city = tweet.place.name.lower()
+                    m = state_regex.search(tweet.place.full_name.lower())
+                    if m:
+                        state = m.group(0)
+                        flag = True  
+                if tweet.place.place_type == 'neighborhood':
+                    cm = city_regex.search(tweet.place.full_name.lower())
+                    if cm:
+                        city = cm.group(0)
+                        neighborhood = tweet.place.name.lower()
+                        flag = True
+
+
+            if not flag and tweet.author.location:
+                cm = city_regex.search(userloc.lower())
+                sm = state_regex.search(userloc.lower())
+                if cm:
+                    city = cm.group(0)
+                    flag = True
+                if sm:
+                    state = sm.group(0)
+                    flag = True
+
+        json_tweet['state']  = state.lower() if state else state
+        json_tweet['city'] = city.lower() if city else city
+        json_tweet['place_name'] = place_name.lower() if place_name else place_name
+        json_tweet['neighborhood'] = neighborhood.lower() if neighborhood else neighborhood
+        
 
         return flag,json_tweet
         
@@ -131,11 +176,11 @@ class Crawler(StreamListener):
             
             self.history['tweet'].add(tweet.id)
             valid,json_tweet = self.check_location(tweet)
+            json_tweet = filter_tweet(json_tweet, self.filterKeys)
 
-            if valid:
-                json_tweet = filter_tweet(json_tweet, self.filterKeys)
+            if valid and check_relevance(json_tweet['full_text'],self.searchTermsList):
                 # Add relevant tweet to database with relevant tags
-                if check_relevance(json_tweet['full_text'],self.searchTermsList):  
+                if valid:  
                     json_tweet['relevance'] = True
                     if self.twt_db.save(json_tweet):
                         self.logger.info(f'Pipe: {pipe} | Saving Tweet ID: {json_tweet["id"]} | Database: twt_db')
@@ -251,8 +296,8 @@ class Crawler(StreamListener):
             f"Pipe: Old | Searching term: {term}.....")
             try:
                 tweetCriteria = got.manager.TweetCriteria().setQuerySearch(term)\
-                                            .setSince("2019-05-01")\
-                                            .setUntil("2020-04-25")\
+                                            .setSince("2017-05-01")\
+                                            .setUntil("2019-12-01")\
                                             .setNear(self.oldTweetSearch)\
                                             .setWithin('50km')\
                                             .setMaxTweets(self.oldTweetSize)
@@ -270,7 +315,6 @@ class Crawler(StreamListener):
         try:
             while True:
                 try:
-                    pass
                     self.download_stream()
                     self.download_search()
                     self.download_old_tweets()
