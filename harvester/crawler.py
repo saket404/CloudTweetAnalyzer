@@ -54,8 +54,8 @@ class Crawler(StreamListener):
         flag = False
         userloc = tweet.author.location if tweet.author.location else ""
         json_tweet = tweet._json
-        city_regex = re.compile("(perth)|(brisbane)|(melbourne)|(sydney)")
-        state_regex = re.compile("(victoria)|(western australia)|(queensland)|(new south wales)")
+        city_regex = re.compile("(perth)|(brisbane)|(melbourne)|(sydney)|(adelaide)|(gold coast)|(hobart)")
+        state_regex = re.compile("(victoria)|(western australia)|(queensland)|(new south wales)|(south australia)|(northern territory)|(tasmania)")
         polygon = box(self.polygon[0], self.polygon[1],self.polygon[2], self.polygon[3])
 
         state = None
@@ -296,8 +296,8 @@ class Crawler(StreamListener):
             f"Pipe: Old | Searching term: {term}.....")
             try:
                 tweetCriteria = got.manager.TweetCriteria().setQuerySearch(term)\
-                                            .setSince("2017-05-01")\
-                                            .setUntil("2019-12-01")\
+                                            .setSince("2020-01-01")\
+                                            .setUntil("2020-05-01")\
                                             .setNear(self.oldTweetSearch)\
                                             .setWithin('50km')\
                                             .setMaxTweets(self.oldTweetSize)
@@ -308,6 +308,42 @@ class Crawler(StreamListener):
             except SystemExit:
                 print('Pipe: Old | Reached limit exiting...')
                 break
+
+    
+    def download_tweet_list(self,file):
+        self.logger.info(
+            "Pipe: Tweet IDs | Initializing Tweet downloading pipeline......")
+
+        id_list = []
+
+        with open(file,'r') as f:
+            for line in f:
+                line = line.replace("\n","")
+                id_list.append(int(line))
+
+        count = len(id_list)
+        valid = 0
+
+        id_chunks = [id_list[i:i + 100] for i in range(0, len(id_list), 100)]
+
+        for chunk in id_chunks:
+            try:
+                tweets = self.api.statuses_lookup(chunk)
+            except Exception as e:
+                self.logger.exception(e)
+
+            for tweet in tweets:
+                try:
+                    if self.tweet_processor(tweet,1,"Tweet IDs"):
+                        valid += 1
+
+                except Exception as e:
+                    self.logger.exception(e)
+                    self.logger.info(
+                        f"Pipe: Tweet IDs | Error processing tweet ID: {tweet.id} ... Skipping....")
+
+        self.logger.info(
+            f"Pipe: Tweet IDs | Finishing with: {valid} tweets out of {count}.")
             
 
 
@@ -318,6 +354,7 @@ class Crawler(StreamListener):
                     self.download_stream()
                     self.download_search()
                     self.download_old_tweets()
+                    # self.download_tweet_list('../../test/twtid.txt')
                     self.download_user()
                 except error.TweepError as e:
                     self.logger.exception(e)
