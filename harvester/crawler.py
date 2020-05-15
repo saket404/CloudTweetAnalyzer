@@ -1,11 +1,11 @@
 from tweepy import Stream, error, Cursor
 from tweepy.streaming import StreamListener
-from utils import lang_list, polygon_list, twitter_setup, check_relevance, filter_tweet
+from utils import lang_list, polygon_list, twitter_setup, check_relevance, filter_tweet, extract_keywords, sentiment
 from couch import Couch
 import couchdb
 from shapely.geometry import Point, box
 from queue import PriorityQueue
-import json, time, re
+import json, time, re, datetime
 import GetOldTweets3 as got
 from collections import Counter
 
@@ -31,7 +31,6 @@ class Crawler(StreamListener):
         self.query = self.searchTerms.replace(","," OR ")
         self.searchTermsList = self.searchTerms.split(',')
         self.searchRadius = self.crawlerConfig['GEOCODE']
-        self.coo = [float(self.searchRadius.split(',')[1]),float(self.searchRadius.split(',')[0])]
         self.filterKeys = ["created_at","id","id_str","full_text","coordinates","place","lang","city","state","place_name","neighborhood"]
         user = ["id","id_str","created_at","name","screen_name","location","time_zone","statuses_count","followers_count","url"]
         user_keys = ["user."+k for k in user]
@@ -49,6 +48,7 @@ class Crawler(StreamListener):
         self.validTwtCount = 0
         self.totCount = 0
         self.whichStats = Counter({"0":0,"1":0,"2":0})
+        self.currentDay = datetime.datetime.now().day
 
     def check_location(self, tweet):
         flag = False
@@ -181,6 +181,8 @@ class Crawler(StreamListener):
             if valid and check_relevance(json_tweet['full_text'],self.searchTermsList):
                 # Add relevant tweet to database with relevant tags
                 if valid:  
+                    json_tweet['keywords'],json_tweet['hashtags'] = extract_keywords(json_tweet['full_text'])
+                    json_tweet['sentiment'] = sentiment(json_tweet['full_text'])
                     json_tweet['relevance'] = True
                     if self.twt_db.save(json_tweet):
                         self.logger.info(f'Pipe: {pipe} | Saving Tweet ID: {json_tweet["id"]} | Database: twt_db')
@@ -207,7 +209,7 @@ class Crawler(StreamListener):
         self.logger.info(
             "Pipe: Stream | Initializing Twitter Streaming pipeline......")
         self.twitterStream = Stream(self.api.auth, self, tweet_mode='extended')
-        self.twitterStream.filter(locations=self.polygon, is_async=True)
+        self.twitterStream.filter(locations=self.polygon,track=self.searchTermsList, is_async=True)
 
     def download_search(self):
         query = self.query
@@ -286,6 +288,13 @@ class Crawler(StreamListener):
                 self.logger.debug(
                     f"Pipe: User   | Already Processed User ID: {user_id} ... Skipping....")
 
+            now = datetime.datetime.now().day
+            if now != self.currentDay:
+                self.currentDay = now
+                self.logger.info(
+                    f"Pipe: User   | Reseting pipeline as day shifted.")
+                break
+            
     def download_old_tweets(self):
         self.logger.info(
             "Pipe: Old | Initializing Twitter Old Tweets pipeline......")

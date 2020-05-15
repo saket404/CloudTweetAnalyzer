@@ -4,6 +4,9 @@ import logging.config
 import yaml
 import re
 from benedict import benedict
+import numpy as np
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+analyser = SentimentIntensityAnalyzer()
 
 
 # Code adapted from https://fangpenlin.com/posts/2012/08/26/good-logging-practice-in-python/
@@ -58,3 +61,28 @@ def check_relevance(tweet,words):
     if words_re.search(tweet):
         flag = True
     return flag
+ 
+def clean_tweet(tweet):
+    tweet = tweet.lower()
+    tweet = re.sub(r'@[A-Za-z0-9]+', '', tweet)
+    tweet = re.sub(r'https?://[A-Za-z0-9./]+', '', tweet)
+    tweet = re.sub(r'[^a-zA-Z#]', ' ', tweet)
+    return tweet
+ 
+def extract_keywords(tweet):
+    covid = re.compile("covid|coronavirus|pandemic|virus")
+    politics = re.compile("auspol|vote|election|australianvotes|ausvotes|australiandecide|nswpol|vicpol|qldpol|sapol|wapol|newspoll|scottyfrommarketing|scottmorrisonmp|peterdutton_mp|climatechange|rubyprincess|bushfire|morrison|politics")
+    keywords = []
+    if covid.search(tweet.lower()):
+        keywords.append('coronavirus')
+    if politics.search(tweet.lower()):
+        keywords.append('politics')
+       
+    hashtags = re.findall(r'\B#\w*[a-zA-Z]+\w*', tweet.lower())
+   
+    return keywords,hashtags
+   
+def sentiment(tweet):
+    tweet = clean_tweet(tweet)
+    score = analyser.polarity_scores(tweet)
+    return score
