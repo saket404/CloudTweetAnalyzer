@@ -1,0 +1,38 @@
+- hosts: localhost
+  vars_files:
+    - host_vars/nectar.yaml
+  gather_facts: true
+
+  roles:
+    - role: openstack-common
+    - role: openstack-volume
+    - role: openstack-security-group
+    - role: openstack-instance
+
+- hosts: Dos
+  vars_files:
+    - host_vars/jam.yaml
+  gather_facts: true
+
+  roles:
+    - role: common
+    - role: volumes
+    - role: docker
+    - role: couchdb
+    - role: add-couchdb-cluster
+    - role: twitter_farmer
+
+- hosts: Uno
+  vars_files:
+    - host_vars/jam.yaml
+  gather_facts: true
+
+  roles:
+    - role: common
+    - role: volumes
+    - role: docker
+    - role: couchdb
+    - role: add-couchdb-cluster
+    - role: setup-couchdb-cluster
+    - role: twitter_farmer
+    #- role: wordpress

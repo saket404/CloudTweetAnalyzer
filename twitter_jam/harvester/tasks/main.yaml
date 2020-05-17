@@ -1,0 +1,41 @@
+---
+- name: Load Twitter Docker Files
+  synchronize: src=docker_files dest=/tmp
+
+- name: Add Python Twitter Config
+  become: yes
+  lineinfile:
+    path: /tmp/docker_files/Dockerfile
+    insertafter: FROM python:3
+    line: ENV CONFIG_FILE {{ py_twitter_config }}
+
+- name: Build image and with build args
+  become: yes
+  docker_image:
+    name: twitter_docker
+    force_source: yes
+    build:
+      path: /tmp/docker_files
+      args:
+        log_volume: /var/log/twitter_docker
+        listen_port: 8080
+    source: build
+  register: image_build
+
+- name: Start a container with a command
+  become: yes
+  docker_container:
+    detach: false
+    name: twitter_test
+    image: twitter_docker
+  register: docker_output
+
+- name: Docker output message
+  debug:
+    msg: "{{ docker_output.ansible_facts.docker_container.Output }}"
+
+- name: Remove the test container
+  become: yes
+  docker_container:
+    state: absent
+    name: "twitter_test"
