@@ -31,7 +31,14 @@
   when: item.openstack is defined
 
 # Add hosts to Ansible in-memory inventory
-- name: Add host
+- name: Add all hosts to play
+  add_host:
+    name: '{{ item.openstack.public_v4 }}'
+    groups: 'Play'
+  loop: '{{ os_instance.results }}'
+
+# Add hosts to Ansible in-memory inventory
+- name: Add host to matching number group
   add_host:
     name: '{{ item.0.openstack.public_v4 }}'
     groups: '{{ item.1 }}'
