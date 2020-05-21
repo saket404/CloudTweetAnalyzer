@@ -106,6 +106,10 @@ class Crawler(StreamListener):
                     state = sm.group(0)
                     flag = True
 
+        # Workaround because Perth is named differently in the places section.
+        if city:
+            city = 'perth' if 'perth' in city.lower() else city
+
         json_tweet['state']  = state.lower() if state else state
         json_tweet['city'] = city.lower() if city else city
         json_tweet['place_name'] = place_name.lower() if place_name else place_name
