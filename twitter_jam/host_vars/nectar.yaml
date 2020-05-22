@@ -11,6 +11,14 @@ volumes:
     vol_size: 25
   - vol_name: jam-vol-2-2
     vol_size: 25
+  - vol_name: jam-vol-3-1
+    vol_size: 25
+  - vol_name: jam-vol-3-2
+    vol_size: 25
+  - vol_name: jam-vol-4-1
+    vol_size: 25
+  - vol_name: jam-vol-4-2
+    vol_size: 25
 
 # Security group
 security_groups:
@@ -51,6 +59,10 @@ instances:
     volumes: ['jam-vol-1-1', 'jam-vol-1-2']
   - name: jam-2
     volumes: ['jam-vol-2-1', 'jam-vol-2-2']
+  - name: jam-3
+    volumes: ['jam-vol-3-1', 'jam-vol-3-2']
+  - name: jam-4
+    volumes: ['jam-vol-4-1', 'jam-vol-4-2']
 
 instance_image: 45225edb-66d8-4fd0-bf41-132a31a18166
 instance_key_name: amclo

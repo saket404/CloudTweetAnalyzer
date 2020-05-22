@@ -31,18 +31,7 @@
 - name: Start a container with a command
   become: yes
   docker_container:
-    # detach: false
-    name: twitter_test
+    name: twitter_harvester
     image: twitter_docker
     volumes: ~/harvester_logs:/usr/src/app/tmp
   register: docker_output
-
-# - name: Docker output message
-#   debug:
-#     msg: "{{ docker_output.ansible_facts.docker_container.Output }}"
-
-# - name: Remove the test container
-#   become: yes
-#   docker_container:
-#     state: absent
-#     name: "twitter_test"

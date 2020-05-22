@@ -1,4 +1,0 @@
-couchDB_cluster_servers:
-  - 'xxx.xxx.xxx.xxx'
-  - 'xxx.xxx.xxx.xxx'
-  - 'xxx.xxx.xxx.xxx'
