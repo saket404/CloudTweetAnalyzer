@@ -48,3 +48,14 @@
   file:
     path: /data/couchdbViews
     state: directory
+
+- name: Copy view 
+  become: yes
+  copy:
+    src: ./couchdb_files/grp43View.json
+    dest: /data/couchdbViews
+
+- name: create view in tweets database
+  args:
+    warn: yes
+  shell: 'curl -X PUT http://{{ couchdb_user }}:{{ couchdb_password }}@{{ groups["Uno"].0 }}:{{ couchdb_port }}/twt_db/_design/grp43 --data-binary @/data/couchdbViews/grp43View.json'

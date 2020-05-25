@@ -1,46 +1,9 @@
 ---
-# - name: Create couchdb directory
-#   tags: 'couchdb'
-#   become: yes
-#   file:
-#     path: "{{ couchdb_dir }}"
-#     owner: "{{ ansible_user }}"
-#     group: "{{ ansible_user }}"
-#     recurse: yes
-#     state: directory
-
-# - name: Configure compose
-#   tags: 'couchdb'
-#   become: yes
-#   template:
-#     src: docker-compose.yaml.j2
-#     dest: "{{ couchdb_dir }}/docker-compose.yaml"
-#     owner: "{{ ansible_user }}"
-#     group: "{{ ansible_user }}"
-
-# - name: Run docker compose
-#   tags: 'couchdb'
-#   become: yes
-#   docker_compose:
-#     project_src: "{{ couchdb_dir }}"
-#     pull: yes
-#     state: present
-#     remove_orphans: yes
-#     recreate: always
-
 - name: Load Couchdb Image
   become: yes
   docker_image:
     name: ibmcom/couchdb3:3.0.0
     source: pull
-
-# - name: network
-#   become: yes
-#   docker_network:
-#     name: my_network
-#     ipam_options:
-#       subnet: '172.26.132.0/16'
-#       gateway: 172.26.132.1
 
 - name: start Couchdb container
   become: yes
@@ -48,7 +11,8 @@
     name: couchdb
     image: ibmcom/couchdb3:3.0.0
     state: started
-    # restart: yes
+    volumes: /data/couchdb/data:/opt/couchdb/data
+    restart_policy: on-failure
     ports:
       - "5984:5984"
       - "4369:4369" 

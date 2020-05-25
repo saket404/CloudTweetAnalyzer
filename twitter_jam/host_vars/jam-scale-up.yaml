@@ -1,0 +1,17 @@
+---
+volumes:
+  - device: /dev/vdb
+    mountpoint: /var/lib/docker
+  - device: /dev/vdc
+    mountpoint: /data
+
+couchdb_dir: couchdb
+couchdb_user: admin
+couchdb_password: twitter_jam
+couchdb_secret: a192aeb9904e6590849337933b000c99
+couchdb_port: 5984
+couchdb_node_number: 4
+master_node_ip: 172.26.133.126
+
+# Python config
+# py_twitter_config: ins_0.ini

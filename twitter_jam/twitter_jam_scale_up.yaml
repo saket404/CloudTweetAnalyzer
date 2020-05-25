@@ -1,0 +1,24 @@
+- hosts: localhost
+  vars_files:
+    - host_vars/nectar-scale-up.yaml
+  gather_facts: true
+
+  roles:
+    - role: cloud-common
+    - role: cloud-volume
+    - role: cloud-security-group
+    - role: cloud-instance
+    - role: cloud-volume-snapshot
+
+- hosts: Play
+  vars_files:
+    - host_vars/jam-scale-up.yaml
+  gather_facts: true
+
+  roles:
+    - role: dep-common
+    - role: dep-volumes
+    - role: dep-docker
+    - role: dep-couchdb
+    - role: couchdb-cluster-scale-up
+    - role: twitter-farmer

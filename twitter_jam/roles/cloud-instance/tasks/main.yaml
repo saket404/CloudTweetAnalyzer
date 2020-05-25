@@ -16,10 +16,10 @@
   loop: '{{ instances }}'
   register: os_instance
 
-- debug:
-    msg: "Instance {{ item.openstack.name }} has been created. IP address is {{ item.openstack.public_v4 }}"
-  loop: '{{ os_instance.results }}'
-  when: item.openstack is defined
+# - debug:
+#     msg: "Instance {{ item.openstack.name }} has been created. IP address is {{ item.openstack.public_v4 }}"
+#   loop: '{{ os_instance.results }}'
+#   when: item.openstack is defined
 
 - name: Wait for connection
   wait_for:

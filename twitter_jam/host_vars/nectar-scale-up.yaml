@@ -3,18 +3,6 @@ availability_zone: melbourne-qh2-uom
 
 # Volume
 volumes:
-  - vol_name: jam-vol-1-1
-    vol_size: 10
-  - vol_name: jam-vol-1-2
-    vol_size: 25
-  - vol_name: jam-vol-2-1
-    vol_size: 10
-  - vol_name: jam-vol-2-2
-    vol_size: 25
-  - vol_name: jam-vol-3-1
-    vol_size: 10
-  - vol_name: jam-vol-3-2
-    vol_size: 25
   - vol_name: jam-vol-4-1
     vol_size: 10
   - vol_name: jam-vol-4-2
@@ -22,12 +10,6 @@ volumes:
 
 # Volume Snapshots for the Couch-DB volumes
 snapshot_volumes:
-  - vol_name: jam-vol-1-2
-    vol_size: 25
-  - vol_name: jam-vol-2-2
-    vol_size: 25
-  - vol_name: jam-vol-3-2
-    vol_size: 25
   - vol_name: jam-vol-4-2
     vol_size: 25
 
@@ -67,17 +49,10 @@ security_groups:
 
 # Instance
 instances:
-  - name: jam-1
-    volumes: ['jam-vol-1-1', 'jam-vol-1-2']
-  - name: jam-2
-    volumes: ['jam-vol-2-1', 'jam-vol-2-2']
-  - name: jam-3
-    volumes: ['jam-vol-3-1', 'jam-vol-3-2']
   - name: jam-4
     volumes: ['jam-vol-4-1', 'jam-vol-4-2']
 
 instance_image: 45225edb-66d8-4fd0-bf41-132a31a18166
 instance_key_name: amclo
 instance_flavor: uom.mse.2c9g
-jam_groups: ['Uno','Dos','Tres','Cuatro']
-# jam_groups: ['Uno','Dos','Tres']
+jam_groups: ['Cuatro']

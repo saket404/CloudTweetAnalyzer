@@ -13,8 +13,8 @@
   become: yes
   lineinfile:
     path: /tmp/harvester_files/config/{{ py_twitter_config }}
-    insertafter: [couch]
-    line: URL = http://admin:twitter_jam@{{ ansible_default_ipv4.address }}:5984/
+    insertafter: "['couch']" 
+    line: URL = http://{{ couchdb_user }}:{{ couchdb_password }}@{{ ansible_default_ipv4.address }}:{{ couchdb_port }}/
 
 - name: Build image and with build args
   become: yes
@@ -33,5 +33,6 @@
   docker_container:
     name: twitter_harvester
     image: twitter_docker
+    restart_policy: on-failure
     volumes: ~/harvester_logs:/usr/src/app/tmp
   register: docker_output

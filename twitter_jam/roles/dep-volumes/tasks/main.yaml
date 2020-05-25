@@ -49,3 +49,11 @@
   when: item.device is defined
   with_items:
     - "{{ volumes }}"
+
+- name: Create couchdb data with permissions
+  become: yes
+  file:
+    path: /data/couchdb/data
+    mode: 0775
+    recurse: yes
+    state: directory

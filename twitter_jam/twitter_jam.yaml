@@ -14,7 +14,7 @@
   vars_files:
     - host_vars/jam.yaml
   gather_facts: true
-
+  
   roles:
     - role: dep-common
     - role: dep-volumes
@@ -28,7 +28,7 @@
 
   roles:
     - role: couchdb-cluster
-    - role: twitter_farmer
+    - role: twitter-farmer
 
 - hosts: Dos
   vars_files:
@@ -36,7 +36,7 @@
   gather_facts: true
 
   roles:
-    - role: twitter_farmer
+    - role: twitter-farmer
 
 - hosts: Tres
   vars_files:
@@ -44,7 +44,7 @@
   gather_facts: true
 
   roles:
-    - role: twitter_farmer
+    - role: twitter-farmer
 
 - hosts: Cuatro
   vars_files:
@@ -52,5 +52,5 @@
   gather_facts: true
 
   roles:
-    - role: twitter_farmer
+    - role: twitter-farmer
 
