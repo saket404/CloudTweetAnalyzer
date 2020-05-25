@@ -69,9 +69,7 @@ fig_map,fig_cor,fig_pie,fig_timeline = sc3.get_figures_sc3(tmp_1,tmp_2,tmp_3,df_
 
 
 
-external_stylesheets = [
-    # 'https://codepen.io/chriddyp/pen/bWLwgP.css',
-    'assets/s1.css']
+external_stylesheets = ['assets/s1.css']
 app=dash.Dash(__name__,external_stylesheets=external_stylesheets)
 app.title='Twitter Analysis'
 
