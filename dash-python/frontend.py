@@ -13,6 +13,8 @@ import time
 import configparser
 ###### Import couchdb backend
 import couchdb_connector.couchdb_backend as cdb
+
+### Config reader
 config = configparser.ConfigParser()
 config.read('config.ini')
 couchConfig = config['couch']
@@ -75,15 +77,11 @@ app.title='Twitter Analysis'
 
 
 # Process all keys value in dropdown_mapping before run to reduce time loading
-print("Processing SC1....")
 fig_sc1={}
-start = time.time()
 for i in dropdown_mapping:
     fig_animated_scatter=sc1.get_figure_3_sc1(df_1, i['label'], i['value'])
     fig_sc1[i['value']]=fig_animated_scatter
-finish = time.time()
-print(f'{finish-start}')
-print('time')
+
 app.layout=html.Div(
                 children=[
                         html.H1('Twitter analysis by Dash',style={ 'textAlign': 'center'},className='title'),

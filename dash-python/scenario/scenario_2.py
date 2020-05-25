@@ -3,8 +3,6 @@ import pandas as pd
 from collections import Counter
 from collections import defaultdict
 import re
-import numpy as np
-import scipy
 import geopandas as gpd #for reading aurin data into dataframe
 import plotly as px
 from datetime import datetime, timedelta
