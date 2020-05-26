@@ -44,9 +44,3 @@
     groups: '{{ item.1 }}'
   loop: '{{ os_instance.results|zip(jam_groups)|list  }}'
   # when: item.openstack is defined
-
-- name: Add host debug
-  debug: 
-    msg: "{{item.0.openstack.public_v4}} {{item.1}}"
-  loop: '{{ os_instance.results|zip(jam_groups)|list  }}'
-  # when: item.openstack is defined
