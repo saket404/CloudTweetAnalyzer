@@ -35,4 +35,3 @@
     image: twitter_docker
     restart_policy: on-failure
     volumes: ~/harvester_logs:/usr/src/app/tmp
-  register: docker_output

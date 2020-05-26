@@ -64,6 +64,12 @@ security_groups:
     port_range_min: 9100
     port_range_max: 9200
     remote_ip_prefix: 0.0.0.0/0
+  - name: frontend_group
+    description: "security group for the Front End"
+    protocol: tcp
+    port_range_min: 8050
+    port_range_max: 8050
+    remote_ip_prefix: 0.0.0.0/0
 
 # Instance
 instances:

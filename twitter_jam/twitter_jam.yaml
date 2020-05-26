@@ -29,6 +29,7 @@
   roles:
     - role: couchdb-cluster
     - role: twitter-farmer
+    - role: front-end-champ
 
 - hosts: Dos
   vars_files:

@@ -1,0 +1,28 @@
+- name: Load Twitter Docker Files
+  synchronize: src=frontend_files dest=/tmp
+
+- name: Add Couchdb URL to Config
+  become: yes
+  lineinfile:
+    path: /tmp/frontend_files/config.ini
+    insertafter: "['couch']" 
+    line: URL = http://{{ couchdb_user }}:{{ couchdb_password }}@{{ ansible_default_ipv4.address }}:{{ couchdb_port }}/
+
+- name: Build image and with build args
+  become: yes
+  docker_image:
+    name: frontend_champ_docker
+    force_source: yes
+    build:
+      path: /tmp/frontend_files
+      args:
+        listen_port: 8050
+    source: build
+  register: image_build
+
+- name: Start a container with a command
+  become: yes
+  docker_container:
+    name: frontend_champ
+    image: frontend_champ_docker
+    restart_policy: on-failure
