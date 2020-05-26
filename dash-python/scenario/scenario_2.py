@@ -52,6 +52,7 @@ def get_corona_figure(df_2):
                                       animation_frame="week",
                                       size="tweet_count",
                                       color="city",
+                                      title="Coronavirus Sentiment Vs Population Internet Access",
                                       labels= {"sentiment": "Sentiment Score", "internet_access": "Percentage Population access to Internet", "city": "City"},
                                       hover_name="city",
                                       range_y=[-0.18,0.2])
@@ -60,7 +61,7 @@ def get_corona_figure(df_2):
     for i in ht_counter.most_common(15):
         ht_data['Hashtags'].append(i[0])
         ht_data['Count'].append(i[1])
-    corona_htcount = pexpr.bar(ht_data, x='Hashtags',y='Count',text='Count')
+    corona_htcount = pexpr.bar(ht_data,title="Most Frequently Occuring Coronavirus Tweet Hashtags", x='Hashtags',y='Count',text='Count')
     corona_htcount.update_traces(textposition='outside')
     corona_htcount.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
 

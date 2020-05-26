@@ -68,7 +68,7 @@ def get_figure_3_sc1(df_scotty, aurin_variable_choice, aurin_variable_field):
 
     
   fig_animated_scatter = pexpr.scatter(df_time, x=aurin_variable_choice, y="sentiment score", animation_frame="month",
-                size = "# tweets", color="city", hover_name="city", size_max=40, range_y=[-0.18,0.2], title="Average Sentiment Vs " + aurin_variable_choice)
+                size = "# tweets", color="city", hover_name="city", size_max=40, range_y=[-0.18,0.2], title="Average Scott Morrison Sentiment Vs " + aurin_variable_choice)
     
   return fig_animated_scatter
 
@@ -83,7 +83,7 @@ def get_figures_sc1(df_scotty, aurin_variable_choice, aurin_variable_field):
   #rename columns for what they need to be in plot
     ts_df.rename(columns = {"sentiment_score":"# tweets","created_at":"month"},inplace=True)
   
-    fig_num_monthly = pexpr.line(ts_df, x='month', y= "# tweets", color="city", title="# Monthly Scott Morrison Tweets By City")
+    fig_num_monthly = pexpr.line(ts_df, x='month', y= "# tweets", color="city", title="Monthly Scott Morrison Tweets By City")
   
   
   
@@ -95,7 +95,7 @@ def get_figures_sc1(df_scotty, aurin_variable_choice, aurin_variable_field):
     ts_df.rename(columns = {"sentiment_score":"average sentiment","created_at":"month"},inplace=True)
     
     fig_average_sentiment = pexpr.line(ts_df, x='month', y= "average sentiment", color="city", title = "Average Monthly Scott Morrison Sentiment By City")
-        
+    fig_average_sentiment.update_yaxes(title_text='Sentiment Score')
     
     
     

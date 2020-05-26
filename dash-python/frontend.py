@@ -14,7 +14,7 @@ import configparser
 ###### Import couchdb backend
 import couchdb_connector.couchdb_backend as cdb
 
-### Config reader
+### Config reader 
 config = configparser.ConfigParser()
 config.read('config.ini')
 couchConfig = config['couch']

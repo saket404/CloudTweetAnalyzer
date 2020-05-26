@@ -120,7 +120,7 @@ def get_figures_sc3(df_choro,df,gdf,df_3):
                  hover_data =['sa2_name16','sentiment_score',"median_rent_weekly"])
     fig_cor.update_layout(
         title={
-            'text': "Average Suburb Sentiment Score vs. Median Weekly Rent",
+            'text': "Average Suburb Sentiment vs. Median Weekly Rent",
             'y':0.95,
             'x':0.45,
             'xanchor': 'center',
@@ -139,7 +139,7 @@ def get_figures_sc3(df_choro,df,gdf,df_3):
     monthly_tweets = monthly_tweets.to_frame(name='# tweets')
     monthly_tweets['Date'] = monthly_tweets.index
 
-    fig_timeline = pexpr.line(monthly_tweets, x='Date', y='# tweets', title= "Monthly Political Tweets in Melbourne with exact locations")
+    fig_timeline = pexpr.line(monthly_tweets, x='Date', y='# tweets', title= "Monthly Political Tweets in Melbourne with Exact Locations")
 
     significant_dates = ['2013-09-30','2014-11-30','2015-02-28','2018-11-30','2019-05-31','2020-01-31']
     significant_events = ['Australian Federal <br> Election  2013', 'Victorian State Election 2014', 
