@@ -165,6 +165,6 @@ def update_sc1_plot(aurin_data_sc1):
 
 
 if __name__=='__main__':
-    app.run_server(debug=False,threaded=True)
+    app.run_server(debug=False,threaded=True,host='0.0.0.0',port=8050)
 
 
