@@ -22,6 +22,10 @@ def query_view(db,fields,view,design_doc):
             doc['created_at'] = data.key
             for i,value in enumerate(data.value):
                 doc[fields[i]] = value
+
+            if doc['city']:
+                doc['city'] = 'perth' if 'perth' in doc['city'] else doc['city']
+                
             docs.append(doc)
             count += 1
         print("Total number of tweets related to the view: ", count)

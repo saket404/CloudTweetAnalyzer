@@ -26,3 +26,5 @@
     name: frontend_champ
     image: frontend_champ_docker
     restart_policy: on-failure
+    ports:
+      - "8050:8050"
