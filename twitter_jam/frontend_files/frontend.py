@@ -1,3 +1,12 @@
+#
+# Team 43, Melbourne
+# Aidan McLoughney(1030836)
+# Thanaboon Muangwong(1049393)
+# Nahid Tajik(1102790)
+# Saket Khandelwal (1041999)
+# Shmuli Bloom(982837)
+#
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html

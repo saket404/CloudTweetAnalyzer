@@ -1,3 +1,12 @@
+#
+# Team 43, Melbourne
+# Aidan McLoughney(1030836)
+# Thanaboon Muangwong(1049393)
+# Nahid Tajik(1102790)
+# Saket Khandelwal (1041999)
+# Shmuli Bloom(982837)
+#
+
 from tweepy import Stream, error, Cursor
 from tweepy.streaming import StreamListener
 from utils import lang_list, polygon_list, twitter_setup, check_relevance, filter_tweet, extract_keywords, sentiment

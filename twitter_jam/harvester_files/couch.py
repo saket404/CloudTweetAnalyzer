@@ -1,3 +1,12 @@
+#
+# Team 43, Melbourne
+# Aidan McLoughney(1030836)
+# Thanaboon Muangwong(1049393)
+# Nahid Tajik(1102790)
+# Saket Khandelwal (1041999)
+# Shmuli Bloom(982837)
+#
+
 import couchdb
 import contextlib
 

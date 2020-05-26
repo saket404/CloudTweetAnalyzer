@@ -1,3 +1,12 @@
+#
+# Team 43, Melbourne
+# Aidan McLoughney(1030836)
+# Thanaboon Muangwong(1049393)
+# Nahid Tajik(1102790)
+# Saket Khandelwal (1041999)
+# Shmuli Bloom(982837)
+#
+
 import couchdb
 import json
 import logging
@@ -25,7 +34,7 @@ def query_view(db,fields,view,design_doc):
 
             if doc['city']:
                 doc['city'] = 'perth' if 'perth' in doc['city'] else doc['city']
-                
+
             docs.append(doc)
             count += 1
         print("Total number of tweets related to the view: ", count)
