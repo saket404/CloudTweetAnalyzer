@@ -1,0 +1,15 @@
+{
+  "_id": "_design/grp43",
+  "views": {
+    "scomo": {
+      "map": "function (doc) {\r\n  regexp = /scottyfrommarketing|scottmorrisonmp|scomo|scott morrision|scottmorrison|scomoresign/\r\n  var cities = ['sydney','melbourne','brisbane','perth','adelaide','hobart']\r\n  text = doc.full_text.toLowerCase()\r\n  for(i=0; i < cities.length; i++){\r\n    if(text.search(regexp) != -1 && doc.city.indexOf(cities[i]) != -1)\r\n      {\r\n        emit(doc.created_at, [doc.city, doc.sentiment.compound,doc.user.id]);\r\n      }\r\n  }\r\n}"
+    },
+    "corona": {
+      "map": "function (doc) {\r\n  var cities = ['perth','sydney','melbourne','adelaide','brisbane']\r\n  for(i=0; i < cities.length; i++){\r\n    if(doc.keywords.includes('coronavirus') && doc.city.indexOf(cities[i]) != -1)\r\n    {\r\n       emit(doc.created_at, [doc.city, doc.sentiment,doc.hashtags,doc.user.id]);\r\n     }\r\n  }\r\n}"
+    },
+    "politics": {
+      "map": "function (doc) {\r\n  if (doc.coordinates != null && doc.keywords.includes('politics'))\r\n  emit(doc.created_at, [doc.city, doc.full_text, doc.sentiment.compound, doc.user.id, doc.coordinates]);\r\n}"
+    }
+  },
+  "language": "javascript"
+}
