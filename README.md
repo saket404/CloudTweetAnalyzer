@@ -2,7 +2,7 @@
 
 COMP90024 Assignment 2 -  Develop a Cloud-based solution that exploits a multitude of virtual machines (VMs) across the UniMelb Research Cloud for harvesting tweets through the Twitter APIs (using both the Streaming and the Search API interfaces). Develop a social analytics dashboard utilising data from Aurin and twitter. 
 
-![Social Analytics Dashboard](/dashboard.png "Social Analytics Dashboard")
+![Social Analytics Dashboard](/Dashboard.png "Social Analytics Dashboard")
 
 ## Standard Full Deployment
 
