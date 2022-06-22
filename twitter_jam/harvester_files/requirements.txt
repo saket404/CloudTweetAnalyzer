@@ -23,4 +23,4 @@ GetOldTweets3==0.0.11
 python-benedict==0.18.1
 CouchDB==1.2
 vaderSentiment==3.3.1
-numpy==1.18.3
+numpy==1.22.0
